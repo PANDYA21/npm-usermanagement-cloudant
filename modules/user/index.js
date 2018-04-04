@@ -1,4 +1,4 @@
-const authentication_methods = require('../modules/authentication');
+const authentication_methods = require('../authentication');
 const required_params = ['username', 'password']; // 'role' could be added here
 
 module.exports = class User {
