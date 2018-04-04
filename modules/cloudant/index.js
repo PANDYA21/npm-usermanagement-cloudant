@@ -58,12 +58,12 @@ class DB {
 		return await ((Promise.promisify(this._insert)).bind(this))(doc, _id);
 	}
 
-	_get(_id, cb) {
-		return this.db.get(_id, createGenericCallback(cb));
+	_get(_id, params, cb) {
+		return this.db.get(_id, params, createGenericCallback(cb));
 	}
 
-	async get(_id) {
-		return await ((Promise.promisify(this._get)).bind(this))(_id);
+	async get(_id, params) {
+		return await ((Promise.promisify(this._get)).bind(this))(_id, params);
 	}
 
 	_fetch(_id, cb) {

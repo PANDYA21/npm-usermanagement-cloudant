@@ -64,30 +64,43 @@ class Usermanagement {
 		}
 	}
 
-	async getAllUsers(include_docs) {
-		return this.db.fetch('_all_docs', { include_docs });
+	async getAllUsers(params) {
+		return this.db.get('_all_docs', params);
 	}
 
 	async getActiveUsers() {
+		return this.db.find({
+			selector: { active: true }
+		});
+	}
 
+	async createIndexForActiveKey() {
+		this.db.createIndex({
+			name: 'active',
+			type: 'json',
+			index: {
+				fields: ['active']
+			}
+		})
 	}
 }
 
 
+module.exports = Usermanagement;
 
-process.env.VCAP_SERVICES = JSON.stringify({
-	cloudantNoSQLDB: [{
-		credentials: {
-			"username": "6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix",
-			"password": "da7f12c43f32fe20a404c044c49502e8a96dd69fc982f2064e2828e1e0e3c4cf",
-			"host": "6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix.cloudant.com",
-			"port": 443,
-			"url": "https://6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix:da7f12c43f32fe20a404c044c49502e8a96dd69fc982f2064e2828e1e0e3c4cf@6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix.cloudant.com"
-		}
-	}]
-});
+// process.env.VCAP_SERVICES = JSON.stringify({
+// 	cloudantNoSQLDB: [{
+// 		credentials: {
+// 			"username": "6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix",
+// 			"password": "da7f12c43f32fe20a404c044c49502e8a96dd69fc982f2064e2828e1e0e3c4cf",
+// 			"host": "6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix.cloudant.com",
+// 			"port": 443,
+// 			"url": "https://6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix:da7f12c43f32fe20a404c044c49502e8a96dd69fc982f2064e2828e1e0e3c4cf@6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix.cloudant.com"
+// 		}
+// 	}]
+// });
 
-let usermanagement = new Usermanagement();
+// let usermanagement = new Usermanagement();
 // usermanagement.createUser({ username: 'bhaumik.pandya@bluetrade.de', password: 'abc@123' })
 // 	.catch(console.error)
 // 	.then(d => console.log(JSON.stringify(d, null, 2)));
@@ -100,6 +113,6 @@ let usermanagement = new Usermanagement();
 // 	.catch(console.error)
 // 	.then(d => console.log(JSON.stringify(d, null, 2)));
 
-usermanagement.getAllUsers(true)
-	.catch(console.error)
-	.then(d => console.log(JSON.stringify(d, null, 2)));
+// usermanagement.getActiveUsers()
+// 	.catch(console.error)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
