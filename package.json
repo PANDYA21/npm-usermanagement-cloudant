@@ -1,0 +1,25 @@
+{
+	"name": "usermanagement",
+	"description": "",
+	"keywords": [],
+	"version": "0.0.1",
+	"private": true,
+	"dependencies": {
+		"@cloudant/cloudant": "^2.1.0",
+		"bluebird": "^3.5.1",
+		"jsonwebtoken": "^8.2.0"
+	},
+	"config": {
+		"dev_port": 8080
+	},
+	"scripts": {
+		"start": "npm run production",
+		"production": "node index.js",
+		"develop": "SET is_dev=TRUE &&nodemon index.js"
+	},
+	"author": "bhaumik.pandya@bluetrade.de",
+	"license": "UNLICENSED",
+	"engines": {
+		"node": "9.9.0"
+	}
+}
