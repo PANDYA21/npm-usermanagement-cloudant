@@ -1,7 +1,7 @@
 {
-	"name": "usermanagement",
+	"name": "usermanagement-cloudant",
 	"description": "",
-	"keywords": [],
+	"keywords": ["usermanagement", "cloudant", "jsonwebtoken"],
 	"version": "0.0.1",
 	"private": true,
 	"dependencies": {
@@ -9,9 +9,6 @@
 		"bluebird": "^3.5.1",
 		"jsonwebtoken": "^8.2.0",
 		"npm": "^5.8.0"
-	},
-	"config": {
-		"dev_port": 8080
 	},
 	"scripts": {
 		"start": "npm run production",
