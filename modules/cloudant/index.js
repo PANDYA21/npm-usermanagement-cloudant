@@ -3,6 +3,12 @@ const Promise = require('bluebird');
 const required_parameters = ['username', 'password', 'url'];
 const default_dbname = 'users';
 
+function createGenericCallback(cb) {
+	return (err, result) => {
+		err ? cb(err, null) : cb(null, result);
+	};
+}
+
 class DB {
 	constructor() {
 		if (arguments.length === 0) {
@@ -40,30 +46,77 @@ class DB {
 		this.db = this.db.use(this.dbname);
 	}
 
-	insertDocAsync(doc, id, cb) {
-		cb = cb || id;
-		typeof id === 'function' ? id = undefined : null;
-		this.db.insert(doc, id, (err, body, header) => {
+	_insert(doc, _id, cb) {
+		cb = cb || _id;
+		typeof _id === 'function' ? _id = undefined : null;
+		this.db.insert(doc, _id, (err, body, header) => {
 			err ? cb(err, null) : cb(null, body);
 		});
 	}
 
-	async insertDoc(doc, id) {
-		return await ((Promise.promisify(this.insertDocAsync)).bind(this))(doc, id);
+	async insert(doc, _id) {
+		return await ((Promise.promisify(this._insert)).bind(this))(doc, _id);
 	}
 
-	getDocAsync(id, cb) {
-		return this.db.get(id, (err, result) => {
-			err ? cb(err, null) : cb(null, result);
-		});
+	_get(_id, cb) {
+		return this.db.get(_id, createGenericCallback(cb));
 	}
 
-	async getDoc(id) {
-		return await ((Promise.promisify(this.getDocAsync)).bind(this))(id);
+	async get(_id) {
+		return await ((Promise.promisify(this._get)).bind(this))(_id);
 	}
 
-	
+	_find(query, cb) {
+		return this.db.find(query, createGenericCallback(cb));
+	}
+
+	async find(query) {
+		return await ((Promise.promisify(this._find)).bind(this))(query);
+	}
+
+	_getIndexes(cb) {
+		this.db.index(createGenericCallback(cb));
+	}
+
+	async getIndexes() {
+		return await ((Promise.promisify(this._getIndexes)).bind(this))();
+	}
+
+	_createIndex(indexJson, cb) {
+		this.db.index(indexJson, createGenericCallback(cb));
+	}
+
+	async createIndex(indexJson) {
+		return await ((Promise.promisify(this._createIndex)).bind(this))(indexJson);
+	}
+
+	async update(doc) {
+		let doc_with_rev = await this.get(doc._id);
+		for (let key in doc) {
+			if (key !== '_rev') {
+				doc_with_rev[key] = doc[key];
+			}
+		}
+		return await this.insert(doc_with_rev);
+	}
+
+	_destroy(_id, _rev, cb) {
+		return this.db.destroy(_id, _rev, createGenericCallback(cb));
+	}
+
+	async destroy(_id, _rev) {
+		return await ((Promise.promisify(this._destroy)).bind(this))(_id, _rev);
+	}
+
+	async delete(_id) {
+		let doc_with_rev = await this.get(_id);
+		return await this.destroy(_id, doc_with_rev._rev);
+	}
 }
+
+
+module.exports = DB;
+
 
 // let db = new DB({
 // 	"username": "6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix",
@@ -72,7 +125,37 @@ class DB {
 // 	"port": 443,
 // 	"url": "https://6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix:da7f12c43f32fe20a404c044c49502e8a96dd69fc982f2064e2828e1e0e3c4cf@6c6158d4-459e-4bbb-a834-cc101c84a56c-bluemix.cloudant.com"
 // });
-// db.insertDoc({ data: 'jkl' }, 'jkl')
+
+// db.createIndex({name:'id', type:'json', index:{fields:['_id']}})
 // 	.catch(console.error)
 // 	.then(console.log);
 
+// db.getIndexes()
+// 	.catch(console.error)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+// db.insert({ data: 'jkl' }, 'jkl')
+// 	.catch(console.error)
+// 	.then(console.log);
+
+// db.find({
+// 		selector: {
+// 			_id: {
+// 				'$eq': 'jkl'
+// 			}
+// 		}
+// 	})
+// 	.catch(console.err)
+// 	.then(console.log);
+
+// db.get('jkl')
+// 	.catch(console.err)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+// db.update({ _id: 'jkl', data: 'new data' })
+// 	.catch(console.err)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+// db.delete('jkl')
+// 	.catch(console.err)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
