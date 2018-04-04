@@ -1,6 +1,7 @@
-const User = require('./modules//user');
+const User = require('./modules/user');
 const DB = require('./modules/cloudant');
 const Promise = require('bluebird');
+const authentication = require('./modules/authentication');
 
 class Usermanagement {
 	constructor() {
@@ -22,7 +23,57 @@ class Usermanagement {
 		this.user = new User(user);
 		return await this.db.insert(this.user, this.user.username);
 	}
+
+	async getUser(username) {
+		return await this.db.get(username);
+	}
+
+	async updateUser(user) {
+		return await this.db.update(user);
+	}
+
+	async setUserActive(username) {
+		let user = await this.db.get(username);
+		user.active = true;
+		return await this.updateUser(user);
+	}
+
+	async setUserInactive(username) {
+		let user = await this.db.get(username);
+		user.active = false;
+		return await this.updateUser(user);
+	}
+
+	async deleteUser(username) {
+		return await this.setUserInactive(username);
+	}
+
+	async authenticateUser(username, password) {
+		let user = await this.getUser(username);
+		let correct_password = await authentication.decryptPassword(user.password);
+		if (password === correct_password) {
+			return {
+				success: true,
+				message: 'authentication successful'
+			};
+		} else {
+			return {
+				success: false,
+				error: 'passwords do not match'
+			};
+		}
+	}
+
+	async getAllUsers(include_docs) {
+		return this.db.fetch('_all_docs', { include_docs });
+	}
+
+	async getActiveUsers() {
+
+	}
 }
+
+
 
 process.env.VCAP_SERVICES = JSON.stringify({
 	cloudantNoSQLDB: [{
@@ -37,6 +88,18 @@ process.env.VCAP_SERVICES = JSON.stringify({
 });
 
 let usermanagement = new Usermanagement();
-usermanagement.createUser({ username: 'bhaumik.pandya@bluetrade.de', password: 'abc@123' })
+// usermanagement.createUser({ username: 'bhaumik.pandya@bluetrade.de', password: 'abc@123' })
+// 	.catch(console.error)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+// usermanagement.setUserActive('bhaumik.pandya@bluetrade.de')
+// 	.catch(console.error)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+// usermanagement.authenticateUser('bhaumik.pandya@bluetrade.de', 'abc@123')
+// 	.catch(console.error)
+// 	.then(d => console.log(JSON.stringify(d, null, 2)));
+
+usermanagement.getAllUsers(true)
 	.catch(console.error)
 	.then(d => console.log(JSON.stringify(d, null, 2)));

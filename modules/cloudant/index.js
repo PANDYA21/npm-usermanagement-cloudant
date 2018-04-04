@@ -66,6 +66,14 @@ class DB {
 		return await ((Promise.promisify(this._get)).bind(this))(_id);
 	}
 
+	_fetch(_id, cb) {
+		return this.db.fetch(_id, createGenericCallback(cb));
+	}
+
+	async fetch(_id) {
+		return await ((Promise.promisify(this._fetch)).bind(this))(_id);
+	}
+
 	_find(query, cb) {
 		return this.db.find(query, createGenericCallback(cb));
 	}
