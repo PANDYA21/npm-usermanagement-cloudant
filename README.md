@@ -13,7 +13,7 @@ npm install git+https://git.timetoact-group.com/BPA/npm-usermanagement-cloudant.
 
 Require in your code:
 ```javascript
-const Usermanagement = require('usermanagement');
+const Usermanagement = require('usermanagement-cloduant');
 
 // for cloudant accounts locally or on cloud
 let usermanagement = new Usermanagement({
