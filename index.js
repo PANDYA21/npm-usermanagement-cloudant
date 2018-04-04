@@ -1,5 +1,5 @@
 const User = require('./modules/user');
-const DB = require('./modules/cloudant');
+const DB = require('./modules/db');
 const Promise = require('bluebird');
 const authentication = require('./modules/authentication');
 
@@ -88,6 +88,8 @@ class Usermanagement {
 
 module.exports = Usermanagement;
 
+
+/* Examples */
 // process.env.VCAP_SERVICES = JSON.stringify({
 // 	cloudantNoSQLDB: [{
 // 		credentials: {
@@ -101,7 +103,7 @@ module.exports = Usermanagement;
 // });
 
 // let usermanagement = new Usermanagement();
-// usermanagement.createUser({ username: 'bhaumik.pandya@bluetrade.de', password: 'abc@123' })
+// usermanagement.createUser({ username: 'bhaumik.pandya@bluetrade.de', password: 'abcDEF@123' })
 // 	.catch(console.error)
 // 	.then(d => console.log(JSON.stringify(d, null, 2)));
 

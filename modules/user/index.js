@@ -53,8 +53,3 @@ module.exports = class User {
 		}
 	}
 }
-
-new module.exports({
-	username: 'abc@domain.de',
-	password: 'abcDEF#123'
-});
