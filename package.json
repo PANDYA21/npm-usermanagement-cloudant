@@ -13,7 +13,8 @@
 	"scripts": {
 		"start": "npm run production",
 		"production": "node index.js",
-		"develop": "SET is_dev=TRUE &&nodemon index.js"
+		"develop": "SET is_dev=TRUE &&nodemon index.js",
+		"test": "node test.js"
 	},
 	"author": "bhaumik.pandya@bluetrade.de",
 	"license": "UNLICENSED",

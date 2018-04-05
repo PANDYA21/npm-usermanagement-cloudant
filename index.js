@@ -88,7 +88,7 @@ class Usermanagement {
 
 	async syncRootUser() {
 		let root_user = require('./modules/user/root_user');
-		await this.createUser(root_user);
+		return await this.createUser(root_user);
 	}
 }
 
