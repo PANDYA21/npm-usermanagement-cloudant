@@ -85,7 +85,11 @@ class Usermanagement {
 			}
 		})
 	}
-}
 
+	async syncRootUser() {
+		let root_user = require('./modules/user/root_user');
+		await this.createUser(root_user);
+	}
+}
 
 module.exports = Usermanagement;
