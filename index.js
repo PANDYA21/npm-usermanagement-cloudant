@@ -57,10 +57,12 @@ class Usermanagement {
 				message: 'authentication successful'
 			};
 		} else {
-			return {
+			let err = {
 				success: false,
 				error: 'passwords do not match'
 			};
+			err.prototype = Error;
+			throw err;
 		}
 	}
 
