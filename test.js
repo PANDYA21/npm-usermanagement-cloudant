@@ -1,11 +1,12 @@
 process.env.VCAP_SERVICES = JSON.stringify({
 	cloudantNoSQLDB: [{
+		name: 'myCloudant',
 		credentials: require('./cloudant_creds')
 	}]
 });
 
 const Usermanagement = require('.');
-let usermanagement = new Usermanagement();
+let usermanagement = new Usermanagement({ db_name: 'myCloudant' });
 
 async function testIt() {
 	try {

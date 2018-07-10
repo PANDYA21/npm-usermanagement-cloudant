@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const User = require('./modules/user');
 const DB = require('./modules/db');
 const Promise = require('bluebird');
@@ -5,14 +6,16 @@ const authentication = require('./modules/authentication');
 
 class Usermanagement {
 	constructor() {
+		this.db_name = arguments[0] ? arguments[0].db_name : 'cloudant'; // service name for VCAP_SERVICES
 		try {
 			this.creds = JSON.parse(process.env.cloudant_creds);
 		} catch (e) {
 			console.warn('process.env.cloudant_creds not set. Trying with process.env.VCAP_SERVICES');
 			try {
 				let VCAP_SERVICES = JSON.parse(process.env.VCAP_SERVICES);
-				this.creds = VCAP_SERVICES.cloudantNoSQLDB[0].credentials;
+				this.creds = _.find(VCAP_SERVICES.cloudantNoSQLDB, { name: this.db_name }).credentials;
 			} catch (e) {
+				console.error(e);
 				throw new Error('Could not fetch cloduant credential details from environment.');
 			}
 		}
