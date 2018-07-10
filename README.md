@@ -8,7 +8,7 @@ This repository serves as a module for basic usermanagement with cloudant databa
 ## Usage
 Install module:
 ```bash
-npm install git+https://github.com/RAW21/npm-usermanagement-cloudant.git --save
+npm install git+https://github.com/PANDYA21/npm-usermanagement-cloudant.git --save
 ```
 
 Require in your code:
