@@ -30,11 +30,9 @@ let usermanagement = new Usermanagement({
 	port: 'cloudant_port'
 });
 
-// for cloudant accounts on cloud-foundary with connected apps-services via VCAP_SERVICES env var
-let usermanagement = new Usermanagement(JSON.parse(process.env.VCAP_SERVICES).cloudantNoSQLDB[0].credentials);
-// or simply
-let usermanagement = new Usermanagement();
-// both of the above are technically the same.
+// for cloudant accounts on cloud-foundary with connected apps-services via VCAP_SERVICES env var, the creds will be fetched automatically.
+let usermanagement = new Usermanagement({ db_name: 'myCloudant' });
+// the parameter 'db_name' is required to fetch the named cloudant instance from VCAP_SERVICES.
 
 
 // create a user
