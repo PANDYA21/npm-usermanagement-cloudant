@@ -17,6 +17,7 @@ class Usermanagement {
 			} catch (e) {
 				console.error(e);
 				throw new Error('Could not fetch cloduant credential details from environment.');
+				process.exit(1);
 			}
 		}
 		this.db = new DB(this.creds);
