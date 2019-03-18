@@ -1,126 +1,156 @@
-const Cloudant = require('@cloudant/cloudant');
+const util = require('util');
+const MongoClient = require('mongodb').MongoClient;
 const Promise = require('bluebird');
-const required_parameters = ['username', 'password', 'url'];
-const default_dbname = 'users';
+const _ = require('lodash');
 
-function createGenericCallback(cb) {
-	return (err, result) => {
-		err ? cb(err, null) : cb(null, result);
-	};
+const User = require('../user');
+
+
+async function _connect(url_or_client, dbname, should_connection_be_left_open = false) {
+  const localclient = typeof url_or_client === 'string' ? new MongoClient(url_or_client, { useNewUrlParser: true }) : url_or_client;
+  return new Promise(function (resolve, reject) {
+    localclient.connect(err => {
+      if (err) {
+        return reject(err);
+      }
+      if (!should_connection_be_left_open) {
+        console.log('closing the con');
+        localclient.close();
+      }
+      resolve(localclient);
+    });
+  });
 }
+
 
 class DB {
-	constructor() {
-		if (arguments.length === 0) {
-			throw new Error('Missing required parameters: username, password');
-		}
-		this.username = arguments[0].username;
-		this.password = arguments[0].password;
-		this.url = arguments[0].url;
-		this.port = arguments[0].port;
-		this.host = arguments[0].host;
-		this.dbname = arguments[0].dbname || default_dbname;
+  constructor() {
+    if (arguments.length === 0) {
+      throw new Error('Missing required parameters to auth against mongodb');
+    }
+    for (let arg in arguments[0]) {
+      this[arg] = arguments[0][arg];
+    }
+    this.keepAlive = arguments[0].keepAlive == undefined ? false : arguments[0].keepAlive;
+    this.dbname = this.dbname || 'users';
+    this.collectionname = this.collectionname || 'users';
+    console.log(this);
+  }
 
-		for (let param of required_parameters) {
-			if (typeof this[param] === 'undefined') {
-				throw new Error('Missing required parameter: ' + param);
-			}
-		}
+  async connect(keepAlive = false) {
+    const keepItAlive = this.keepAlive || keepAlive;
+    this.client = await _connect(this.uri, this.dbname, keepItAlive);
+    return this;
+  }
 
-		this.setDb();
-	}
+  getDb() {
+    this.db = this.client.db(this.dbname);
+    // return this;
+  }
 
-	setDb() {
-		this.cloudant = Cloudant({
-			username: this.username,
-			password: this.password,
-			url: this.url,
-			host: this.host,
-			port: this.port
-		});
-		this.db = this.cloudant.db;
-		this.use();
-	}
+  async getCollection() {
+    this.collection = await this.db.collection(this.collectionname);
+    // return this;
+  }
 
-	use() {
-		this.db = this.db.use(this.dbname);
-	}
+  async setDbColIfNot() {
+    if (this.collection == undefined) {
+      console.debug('creating a new connection... ');
+      await this.connect(true);
+      await this.getDb();
+      await this.getCollection();
+    }
+  }
 
-	_insert(doc, _id, cb) {
-		cb = cb || _id;
-		typeof _id === 'function' ? _id = undefined : null;
-		this.db.insert(doc, _id, (err, body, header) => {
-			err ? cb(err, null) : cb(null, body);
-		});
-	}
+  async ensureUniqueId() {
+    await this.setDbColIfNot();
+    console.debug('Ensuring unique index for username...');
+    await this.db.createIndex('users', { username: 1 }, { unique: true, dropDups:true } );
+    console.debug('closing connection that was used for ensureIndex...');
+    if (!this.keepAlive) {
+      this.client.close();
+      this.db.s.topology.close();
+      this.collection.s.db.s.topology.close();
+    }
+  }
 
-	async insert(doc, _id) {
-		return await ((Promise.promisify(this._insert)).bind(this))(doc, _id);
-	}
+  async _find() {
+    await this.setDbColIfNot();
+    const response = await this.collection
+      .find(this.query, this.queryOptions)
+      .sort(this.sortingOptions)
+      .toArray();
+    if (!this.keepAlive)
+      this.collection.s.db.s.topology.close();
+    return response; // { response, connection: this };
+  }
 
-	_get(_id, params, cb) {
-		return this.db.get(_id, params, createGenericCallback(cb));
-	}
+  async _insert() {
+    await this.setDbColIfNot();
+    const response = await this.collection.insertMany(this.insertDocuments);
+    if (!this.keepAlive)
+      this.collection.s.db.s.topology.close();
+    return response; // { response, connection: this };
+  }
 
-	async get(_id, params) {
-		return await ((Promise.promisify(this._get)).bind(this))(_id, params);
-	}
+  async _update() {
+    await this.setDbColIfNot();
+    const response = await this.collection.updateMany(this.updateFilter, this.updateDocument);
+    if (!this.keepAlive)
+      this.collection.s.db.s.topology.close();
+    return { 
+      message: 'Modified ' + response.result.nModified + '; with status==ok: ' + (response.result.ok == 1),
+      response, 
+      connection: this
+    };
+  }
 
-	_fetch(_id, cb) {
-		return this.db.fetch(_id, createGenericCallback(cb));
-	}
+  async get(username) {
+    this.query = { username };
+    return await this._find();
+  }
 
-	async fetch(_id) {
-		return await ((Promise.promisify(this._fetch)).bind(this))(_id);
-	}
+  async insert(user) {
+    this.insertDocuments = [ user ];
+    try {
+      return await this._insert();
+    } catch(e) {
+      console.log('closing mongo con');
+      this.client.close();
+      throw e;
+    }
+  }
 
-	_find(query, cb) {
-		return this.db.find(query, createGenericCallback(cb));
-	}
-
-	async find(query) {
-		return await ((Promise.promisify(this._find)).bind(this))(query);
-	}
-
-	_getIndexes(cb) {
-		this.db.index(createGenericCallback(cb));
-	}
-
-	async getIndexes() {
-		return await ((Promise.promisify(this._getIndexes)).bind(this))();
-	}
-
-	_createIndex(indexJson, cb) {
-		this.db.index(indexJson, createGenericCallback(cb));
-	}
-
-	async createIndex(indexJson) {
-		return await ((Promise.promisify(this._createIndex)).bind(this))(indexJson);
-	}
-
-	async update(doc) {
-		let doc_with_rev = await this.get(doc._id);
-		for (let key in doc) {
-			if (key !== '_rev') {
-				doc_with_rev[key] = doc[key];
-			}
-		}
-		return await this.insert(doc_with_rev);
-	}
-
-	_destroy(_id, _rev, cb) {
-		return this.db.destroy(_id, _rev, createGenericCallback(cb));
-	}
-
-	async destroy(_id, _rev) {
-		return await ((Promise.promisify(this._destroy)).bind(this))(_id, _rev);
-	}
-
-	async delete(_id) {
-		let doc_with_rev = await this.get(_id);
-		return await this.destroy(_id, doc_with_rev._rev);
-	}
 }
 
 
-module.exports = DB;
+async function getEm3() {
+  const user = new User({ username: 'abc5@domain.com', password: 'def' });
+  const db = new DB({
+    uri: 'mongodb://localhost:27017',
+    keepAlive: true
+  });
+  await db.ensureUniqueId();
+  const insertResponse = await db.insert(user);
+  const gotUser = await db.get(user.username);
+  db.db.s.topology.close();
+  return gotUser;
+}
+
+// const log = require('why-is-node-running');
+
+getEm3()
+  .then(x => {
+    console.log(x);
+  })
+  .catch(x => {
+    console.error(x);
+    // log();
+  });
+
+
+
+// setTimeout(() => {
+//   process.exit(0);
+// }, 5000);
+

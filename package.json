@@ -13,6 +13,7 @@
 		"bluebird": "^3.5.1",
 		"jsonwebtoken": "^8.2.0",
 		"lodash": "^4.17.10",
+		"mongodb": "^3.1.13",
 		"npm": "^5.8.0"
 	},
 	"scripts": {
@@ -25,5 +26,8 @@
 	"license": "UNLICENSED",
 	"engines": {
 		"node": "9.9.0"
+	},
+	"devDependencies": {
+		"why-is-node-running": "^2.0.3"
 	}
 }
